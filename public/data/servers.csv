@@ -1,0 +1,6 @@
+﻿hostname,ip,assignee_name,assignee_id,purpose,environment,status,server_username,server_password,esxi_id
+dev-app-01,10.24.8.21,佐藤 みなみ,sato-minami,決済 API リニューアル,Development,allocated,dev-app-admin,server-change-me-01,esxi-dev-01
+dev-app-02,10.24.8.22,鈴木 健太,suzuki-kenta,認証基盤 PoC,Development,allocated,dev-app-admin,server-change-me-02,esxi-dev-01
+dev-batch-01,10.24.8.35,,,未割り当て,Development,available,batch-admin,server-change-me-03,esxi-dev-02
+dev-legacy-03,10.24.9.13,高橋 海斗,takahashi-kaito,レガシー移行検証,Sandbox,maintenance,legacy-admin,server-change-me-04,esxi-dev-02
+qa-web-01,10.24.10.41,田中 あかり,tanaka-akari,E2E テスト,QA,allocated,qa-web-admin,server-change-me-qa,esxi-qa-01

@@ -1,0 +1,21 @@
+# 共用 ESXi 台帳
+# サーバ側から id を esxiId で参照します。
+# 静的配信されるため、本番用・管理者用の機密情報は置かないでください。
+hosts:
+  - id: esxi-dev-01
+    name: 開発 ESXi 01
+    url: https://esxi-dev-01.example.local
+    username: devops-readonly
+    password: change-me-01
+
+  - id: esxi-dev-02
+    name: 開発 ESXi 02
+    url: https://esxi-dev-02.example.local
+    username: devops-readonly
+    password: change-me-02
+
+  - id: esxi-qa-01
+    name: QA ESXi 01
+    url: https://esxi-qa-01.example.local
+    username: qa-readonly
+    password: change-me-qa
