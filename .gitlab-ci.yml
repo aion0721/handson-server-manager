@@ -1,15 +1,14 @@
 default:
   image: node:22-alpine
 
-deploy-pages:
+pages:
   stage: deploy
   script:
     - yarn install --frozen-lockfile
     - yarn build
-  pages:
-    publish: dist
   artifacts:
     paths:
       - dist
+  publish: dist
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
