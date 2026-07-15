@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseServerCsv, parseTabularServers, serializeServerCsv } from './csv'
+import { parseServerCsv, parseTabularServers, serializeServerCsv, serializeServerTsv } from './csv'
 
 describe('server CSV', () => {
   it('Excel向けBOMと引用符を保って往復できる', () => {
@@ -20,5 +20,16 @@ describe('server CSV', () => {
     expect(rows).toHaveLength(2)
     expect(rows[1].hostname).toBe('all-02')
     expect(rows[1].assignee_name).toBe('')
+  })
+
+  it('現在の台帳をExcel貼り付け用のタブ区切りにする', () => {
+    const rows = parseTabularServers('hostname\tip\tstatus\ncopy-01\t10.2.0.1\tavailable')
+    rows[0].purpose = 'API\nバッチ'
+    const text = serializeServerTsv(rows)
+
+    expect(text.startsWith('hostname\tip\tassignee_name')).toBe(true)
+    expect(text).toContain('copy-01\t10.2.0.1')
+    expect(text).toContain('API バッチ')
+    expect(parseTabularServers(text)).toEqual(rows.map((row) => ({ ...row, purpose: 'API バッチ' })))
   })
 })

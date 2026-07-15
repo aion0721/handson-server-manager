@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, Download, Plus, RefreshCcw, Save, Sheet, Trash2, Upload, X } from 'lucide-react'
-import { CSV_HEADERS, csvRowToServer, emptyCsvRow, parseTabularServers, serializeServerCsv, serverToCsvRow, type CsvHeader, type ServerCsvRow } from './csv'
+import { AlertTriangle, Check, Clipboard, Download, Plus, RefreshCcw, Save, Sheet, Trash2, Upload, X } from 'lucide-react'
+import { CSV_HEADERS, csvRowToServer, emptyCsvRow, parseTabularServers, serializeServerCsv, serializeServerTsv, serverToCsvRow, type CsvHeader, type ServerCsvRow } from './csv'
 import type { EsxiHost, Server } from './types'
 
 const labels: Record<CsvHeader, string> = { hostname: 'ホスト名', ip: 'IPアドレス', assignee_name: '割り当て者名', assignee_id: '割り当て者ID', purpose: '用途', environment: '環境', status: 'ステータス', server_username: 'サーバーID', server_password: 'サーバーPW', esxi_id: 'ESXi ID' }
@@ -32,6 +32,7 @@ export default function RegistryEditor({ servers, esxiHosts, onApply, onClose }:
   const [bulkError, setBulkError] = useState('')
   const [clearConfirm, setClearConfirm] = useState(false)
   const [addCount, setAddCount] = useState('1')
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle')
   const errors = useMemo(() => validateRows(rows, esxiHosts), [rows, esxiHosts])
   const updateCell = (rowIndex: number, header: CsvHeader, value: string) => setRows((current) => current.map((row, index) => index === rowIndex ? { ...row, [header]: value } : row))
 
@@ -57,6 +58,16 @@ export default function RegistryEditor({ servers, esxiHosts, onApply, onClose }:
     if (errors.length) return
     const url = URL.createObjectURL(new Blob([serializeServerCsv(rows)], { type: 'text/csv;charset=utf-8' }))
     const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'servers.csv'; anchor.click(); URL.revokeObjectURL(url)
+  }
+
+  const copyForExcel = async () => {
+    try {
+      await navigator.clipboard.writeText(serializeServerTsv(rows))
+      setCopyState('copied')
+    } catch {
+      setCopyState('error')
+    }
+    window.setTimeout(() => setCopyState('idle'), 2000)
   }
 
   const replaceAll = () => {
@@ -96,7 +107,7 @@ export default function RegistryEditor({ servers, esxiHosts, onApply, onClose }:
     <div className="editor-table-wrap"><table className="editor-table"><thead><tr><th className="row-number">#</th>{CSV_HEADERS.map((header) => <th key={header}>{labels[header]}<small>{header}</small></th>)}<th /></tr></thead>
       <tbody>{rows.map((row, rowIndex) => <tr key={`${row.hostname}-${rowIndex}`}><td className="row-number">{rowIndex + 1}</td>{CSV_HEADERS.map((header, columnIndex) => <td key={header}><input value={row[header]} onChange={(event) => updateCell(rowIndex, header, event.target.value)} onPaste={(event) => pasteCells(event, rowIndex, columnIndex)} type={header.includes('password') ? 'password' : 'text'} aria-label={`${rowIndex + 1}行目 ${labels[header]}`} /></td>)}<td><button className="icon-button danger" onClick={() => setRows((current) => current.filter((_, index) => index !== rowIndex))} aria-label={`${rowIndex + 1}行目を削除`}><Trash2 size={15} /></button></td></tr>)}</tbody>
     </table></div>
-    <div className="editor-bottom"><div className="add-rows-control"><input type="number" min="1" max="100" value={addCount} onChange={(event) => setAddCount(event.target.value)} aria-label="追加する行数" /><span>行</span><button className="secondary-button" onClick={addRows}><Plus size={15} /> 行を追加</button></div><button className="replace-all-button" onClick={() => { setBulkOpen((open) => !open); setClearConfirm(false) }}><RefreshCcw size={14} /> 全件入れ替え</button>{clearConfirm ? <div className="clear-confirm"><span>{rows.length}件すべて削除します</span><button onClick={() => { setRows([]); setClearConfirm(false); setBulkOpen(false) }}>クリア実行</button><button onClick={() => setClearConfirm(false)}>キャンセル</button></div> : <button className="clear-all-button" onClick={() => { setClearConfirm(true); setBulkOpen(false) }} disabled={!rows.length}><Trash2 size={14} /> 全件クリア</button>}<div className={`validation-summary ${errors.length ? 'invalid' : ''}`}>{errors.length ? <><AlertTriangle size={15} /><span>{errors[0]}{errors.length > 1 && `（ほか ${errors.length - 1} 件）`}</span></> : <span>入力チェック OK・{rows.length} 台</span>}</div><div className="editor-actions"><button className="secondary-button" disabled={Boolean(errors.length)} onClick={() => onApply(rows.map(csvRowToServer))}><Save size={15} /> 画面に反映</button><button className="primary-button" disabled={Boolean(errors.length)} onClick={download}><Download size={15} /> CSVを書き出す</button></div></div>
+    <div className="editor-bottom"><div className="add-rows-control"><input type="number" min="1" max="100" value={addCount} onChange={(event) => setAddCount(event.target.value)} aria-label="追加する行数" /><span>行</span><button className="secondary-button" onClick={addRows}><Plus size={15} /> 行を追加</button></div><button className="replace-all-button" onClick={() => { setBulkOpen((open) => !open); setClearConfirm(false) }}><RefreshCcw size={14} /> 全件入れ替え</button>{clearConfirm ? <div className="clear-confirm"><span>{rows.length}件すべて削除します</span><button onClick={() => { setRows([]); setClearConfirm(false); setBulkOpen(false) }}>クリア実行</button><button onClick={() => setClearConfirm(false)}>キャンセル</button></div> : <button className="clear-all-button" onClick={() => { setClearConfirm(true); setBulkOpen(false) }} disabled={!rows.length}><Trash2 size={14} /> 全件クリア</button>}<div className={`validation-summary ${errors.length ? 'invalid' : ''}`}>{copyState === 'error' ? <span>クリップボードへコピーできませんでした</span> : errors.length ? <><AlertTriangle size={15} /><span>{errors[0]}{errors.length > 1 && `（ほか ${errors.length - 1} 件）`}</span></> : <span>入力チェック OK・{rows.length} 台</span>}</div><div className="editor-actions"><button className="secondary-button" onClick={copyForExcel} title="見出しと全行（ID・PWを含む）をコピー">{copyState === 'copied' ? <Check size={15} /> : <Clipboard size={15} />} {copyState === 'copied' ? 'コピーしました' : 'Excelへコピー'}</button><button className="secondary-button" disabled={Boolean(errors.length)} onClick={() => onApply(rows.map(csvRowToServer))}><Save size={15} /> 画面に反映</button><button className="primary-button" disabled={Boolean(errors.length)} onClick={download}><Download size={15} /> CSVを書き出す</button></div></div>
     <p className="editor-caution"><AlertTriangle size={13} /> 画面への反映は一時的です。永続化するには、書き出したCSVを <code>public/data/servers.csv</code> と差し替えてください。</p>
   </div></div>
 }

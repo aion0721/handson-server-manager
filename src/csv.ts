@@ -63,6 +63,13 @@ export function serializeServerCsv(rows: ServerCsvRow[]): string {
   return `\uFEFF${lines.join('\r\n')}\r\n`
 }
 
+const escapeClipboardCell = (value: string) => value.replace(/[\t\r\n]+/g, ' ')
+
+export function serializeServerTsv(rows: ServerCsvRow[]): string {
+  const lines = [CSV_HEADERS.join('\t'), ...rows.map((row) => CSV_HEADERS.map((header) => escapeClipboardCell(row[header])).join('\t'))]
+  return lines.join('\r\n')
+}
+
 export function serverToCsvRow(server: Server): ServerCsvRow {
   return { hostname: server.hostname, ip: server.ip, assignee_name: server.assignee?.name ?? '', assignee_id: server.assignee?.id ?? '', purpose: server.purpose ?? '', environment: server.environment ?? '', status: server.status, server_username: server.credentials?.username ?? '', server_password: server.credentials?.password ?? '', esxi_id: server.esxiId ?? '' }
 }
