@@ -4,10 +4,15 @@ import { csvRowToServer, parseServerCsv } from './csv'
 
 const statuses: ServerStatus[] = ['allocated', 'available', 'maintenance']
 
+export function resolveDataUrl(fileName: string, basePath = import.meta.env.BASE_URL, pageUrl = typeof document === 'undefined' ? 'http://localhost/' : document.baseURI): string {
+  const normalizedBase = basePath.endsWith('/') ? basePath : `${basePath}/`
+  return new URL(`data/${fileName}`, new URL(normalizedBase, pageUrl)).toString()
+}
+
 export async function loadRegistry(): Promise<RegistryData> {
   const [serversResponse, esxiResponse] = await Promise.all([
-    fetch(`${import.meta.env.BASE_URL}data/servers.csv`, { cache: 'no-store' }),
-    fetch(`${import.meta.env.BASE_URL}data/esxi.yaml`, { cache: 'no-store' }),
+    fetch(resolveDataUrl('servers.csv'), { cache: 'no-store' }),
+    fetch(resolveDataUrl('esxi.yaml'), { cache: 'no-store' }),
   ])
   if (!serversResponse.ok) throw new Error(`サーバ台帳を読み込めませんでした (${serversResponse.status})`)
   if (!esxiResponse.ok) throw new Error(`ESXi 台帳を読み込めませんでした (${esxiResponse.status})`)

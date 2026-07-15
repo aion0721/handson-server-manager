@@ -37,6 +37,25 @@ export function parseServerCsv(text: string): ServerCsvRow[] {
     Object.fromEntries(CSV_HEADERS.map((header) => [header, record[headers.indexOf(header)] ?? ''])) as ServerCsvRow)
 }
 
+export function parseTabularServers(text: string): ServerCsvRow[] {
+  const input = text.trim()
+  if (!input) throw new Error('貼り付けるデータがありません')
+  if (!input.includes('\t')) return parseServerCsv(input)
+
+  const matrix = input.replace(/\r/g, '').split('\n').filter((line) => line.trim()).map((line) => line.split('\t'))
+  const firstRow = matrix[0].map((value) => value.trim())
+  const hasHeaders = firstRow.includes('hostname') && firstRow.includes('ip')
+  const headers = hasHeaders ? firstRow : [...CSV_HEADERS]
+  const records = hasHeaders ? matrix.slice(1) : matrix
+  const unknown = headers.filter((header) => !CSV_HEADERS.includes(header as CsvHeader))
+  if (unknown.length) throw new Error(`未対応の列があります: ${unknown.join(', ')}`)
+
+  return records.map((record) => Object.fromEntries(CSV_HEADERS.map((header) => {
+    const sourceIndex = headers.indexOf(header)
+    return [header, sourceIndex >= 0 ? record[sourceIndex] ?? '' : '']
+  })) as ServerCsvRow)
+}
+
 const escapeCsv = (value: string) => /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
 
 export function serializeServerCsv(rows: ServerCsvRow[]): string {

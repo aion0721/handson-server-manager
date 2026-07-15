@@ -1,9 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { loadRegistry } from './data'
+import { loadRegistry, resolveDataUrl } from './data'
 
 afterEach(() => vi.unstubAllGlobals())
 
 describe('loadRegistry', () => {
+  it('GitLab Pages のベースパス配下へデータURLを追従させる', () => {
+    expect(resolveDataUrl('servers.csv', '/group/project/', 'https://pages.example/old/')).toBe('https://pages.example/group/project/data/servers.csv')
+    expect(resolveDataUrl('esxi.yaml', './', 'https://pages.example/new-project/index.html')).toBe('https://pages.example/new-project/data/esxi.yaml')
+  })
+
   it('YAML の台帳を読み込む', async () => {
     vi.stubGlobal('fetch', vi.fn()
       .mockResolvedValueOnce(new Response(`hostname,ip,assignee_name,assignee_id,purpose,environment,status,server_username,server_password,esxi_id
